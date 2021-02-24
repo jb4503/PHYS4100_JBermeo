@@ -12,10 +12,6 @@ def main():
 
     # Ex 5.12
 
-    integral_lower: 0
-    integral_top: 1
-    num_slices: 50
-
     # Term outside of the integral
 
     def outer_term(t):
@@ -25,7 +21,9 @@ def main():
     # Define the integral
 
     def f(x):
-        return (x**3)/(np.exp(x)-1)
+        a = (x**3)
+        b = (np.exp(x))-1
+        return a/b
 
     # Simpsons rule:
 
@@ -41,17 +39,19 @@ def main():
         return (1/3) * h * (f(a) + f(b) + 4*odds + 2*even)
     # Stefan-Boltzmann Equation
 
+    integral_lower = 1e-10
+    integral_top = float(100)
+    num_slices = int(10000)
+
     s_b = outer_term(1) * simpson_integration(integral_lower, integral_top, num_slices)
 
     # Error finding
 
     error = abs(cons.Stefan_Boltzmann - s_b)
 
-    print ('The calculated value of the constant is: {}'.format(s_b))
+    print('The calculated value of the constant is: {}'.format(s_b))
     print('The theoretical value of the constant is: {}'.format(cons.Stefan_Boltzmann))
     print('The difference between found and theoretical values is: {}'.format(error))
-
-    # To check the theoretical values
 
     pr.disable()
     # pr.print_stats(sort='time')
