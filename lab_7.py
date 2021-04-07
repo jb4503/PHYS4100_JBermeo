@@ -1,9 +1,16 @@
+import time
+import cProfile
 import numpy as np
 import matplotlib.pyplot as plt
 from functions_lab7 import dft, square_wave, sawtooth_wave, modulated_sine_wave
 
 
 def main():
+    # For timing purposes
+    start = time.time()
+    pr = cProfile.Profile()
+    pr.enable()
+
     # Number of points
     n_1 = np.linspace(0, 1, 1000)
 
@@ -12,7 +19,7 @@ def main():
     mod_sine = modulated_sine_wave(n_1)
 
     square_wave_coefficients = dft(sq_wave)
-    sawtooth_wave_coefficients = dft(sawtooth_wave)
+    sawtooth_wave_coefficients = dft(sawtooth)
     modulated_sine_coefficients = dft(mod_sine)
 
     fig, axs = plt.subplots(3, 2)
@@ -32,6 +39,11 @@ def main():
     axs[2, 1].set_title("DFT of the Modulated Sine wave")
     fig.tight_layout()
     fig.show()
+
+    pr.disable()
+    # pr.print_stats(sort='time')
+    end = time.time()
+    print(f"Program took :{end - start} seconds to run")
 
 
 if __name__ == '__main__':
