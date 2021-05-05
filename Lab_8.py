@@ -81,6 +81,7 @@ def main():
 
     animated = animation.FuncAnimation(fig, init, frames=360, interval=20)
     plt.show()
+    animated.save('Brownian_MotionGIF.gif', writer=animation.PillowWriter(fps=30))
 
     pr.disable()
     # pr.print_stats(sort='time')
