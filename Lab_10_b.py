@@ -1,86 +1,89 @@
+import time
+import cProfile
 import matplotlib.pyplot as plt
+import matplotlib.animation as animation
 import numpy as np
-from vpython import curve, rate
+import scipy.fftpack as fft
+from Lab_10_Functions import psi_function
+
+# Constants
+ELECTRON_MASS = 9.109e-31
+L = 1e-8  # m
+TIME_STEP = 1e-18  # seconds
+SIGMA = 1e-10  # m
+KAPPA = 5e10  # 1/m
+H_BAR = 6.626e-34
+N_SLICES = 1000  # number of spatial slices
+A_DIST = L / N_SLICES
 
 
-h = 2e-18 * 10
-hbar = 1.0546e-36
-L = 1e-8
-M = 9.109e-31
-N = 1000  # Grid slices
+def main():
+    # For timing purposes
+    start = time.time()
+    pr = cProfile.Profile()
+    pr.enable()
 
-a = L / N
+    def inv_discrete_sine(t):
+        """
+        Inverse discrete sine at a specific time of a wave function
+        """
+        sin_cos = t * (((np.pi ** 2) * H_BAR * (position_k ** 2)) / (2 * ELECTRON_MASS * (L ** 2)))
+        a_term = np.cos(sin_cos) * c_real
+        b_term = np.sin(sin_cos) * c_imag
+        z = a_term - b_term
+        inverse_z = fft.idst(z) / N_SLICES
+        return inverse_z
+
+    # Initial parameters
+
+    start_time = TIME_STEP * np.arange(N_SLICES)
+    end_time = N_SLICES
+    position_k = np.delete((np.linspace(0, N_SLICES, num=N_SLICES+1, endpoint=False)), 0)
+    x_points = np.delete((A_DIST * np.linspace(0, N_SLICES, num=N_SLICES+1, endpoint=False)), 0)
+
+    # Animation portion
+    def init():
+        line.set_data(x_points, psi_function(x_points))
+        return line,
+
+    def animate(i):
+        x = x_points
+        y = inv_discrete_sine(time[i])
+        line.set_data(x, y)
+        return line,
+
+    psi_wave = psi_function(x_points)
+    coeffs = fft.dst(psi_wave)
+    # Split the coefficients
+    c_real = np.real(coeffs)
+    c_imag = np.imag(coeffs)
+
+    plt.plot(x_points, np.real(coeffs) ** 2)
+    #plt.plot(x_points, np.real(coeffs[49]) ** 2)
+    #plt.plot(x_points, np.real(coeffs[250]) ** 2)
+    plt.xlabel("x (m)")
+    plt.ylabel("$\psi(x)$")
+    plt.show()
+
+    # Animation
+    fig = plt.figure()
+    axis = plt.axes(xlim=(-1e-9, 11e-9), ylim=(-2, 2))
+    axis.set_xlabel('x')
+    axis.set_ylabel('$\psi(x)$')
+    axis.set_title('Spectral Wave')
+    line, = axis.plot([], [], lw=.5)
+
+    animate_wave = animation.FuncAnimation(
+        fig, animate, init_func=init, frames=end_time, interval=10, blit=True,
+        save_count=50)
+    my_writer = animation.PillowWriter(fps=30, codec='libx264', bitrate=2)
+    plt.show()
+
+    pr.disable()
+    # pr.print_stats(sort='time')
+    end = time.time()
+    print(f"Program took :{end - start} seconds to run")
 
 
-def complex_arg(trans):
-    def f(y):
-        return trans(np.real(y)) + 1j * trans(np.imag(y))
-
-    return f
-
-
-@complex_arg
-def dst(y):
-    """
-    Perform dst transform for real argument
-    """
-    N = len(y)
-    y2 = np.empty(2 * N, float)
-    y2[0] = y2[N] = 0.0
-    y2[1:N] = y[1:]
-    y2[:N:-1] = -y[1:]
-    a = -np.imag(np.fft.rfft(y2))[:N]
-    a[0] = 0.0
-
-    return a
-
-
-@complex_arg
-def idst(a):
-    N = len(a)
-    c = np.empty(N + 1, complex)
-    c[0] = c[N] = 0.0
-    c[1:N] = -1j * a[1:]
-    y = np.fft.irfft(c)[:N]
-    y[0] = 0.0
-
-    return y
-
-
-ksi = np.zeros(N + 1, complex)
-
-
-def ksi0(x):
-    x0 = L / 2
-    sigma = 1e-10
-    k = 5e10
-    return np.exp(-(x - x0) ** 2 / 2 / sigma ** 2) * np.exp(1j * k * x)
-
-
-x = np.linspace(0, L, N + 1)
-ksi[:] = ksi0(x)
-ksi[[0, N]] = 0
-
-b0 = dst(ksi)
-
-t = 1e-18
-b_ = b0 * np.exp(1j * np.pi ** 2 * hbar * np.arange(1, N + 2) ** 2 / 2 / M / L ** 2 * t)
-
-ksi_ = idst(b_)
-plt.plot(ksi_)
-plt.show()
-
-
-# ksi_c = curve()
-# ksi_c.set_x(x - L / 2)
-
-t = 0
-# while True:
-    # rate(30)
-    # b_ = b0 * np.exp(1j * np.pi ** 2 * hbar * np.arange(1, N + 2) ** 2 / 2 / M / L ** 2 * t)
-    # ksi_ = idst(b_)
-
-    # ksi_c.set_y(np.real(ksi_) * 1e-9)
-    # ksi_c.set_z(np.imag(ksi_) * 1e-9)
-
-    # t += h * 5
+if __name__ == '__main__':
+    main()
