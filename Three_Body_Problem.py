@@ -12,17 +12,17 @@ SUN = 2e30  # Mass of Sun in kg
 THIRD_PLANET = 1.9e27  # Mass of third planet
 BIG_G = 6.673e-11  # Gravitational Constant
 N_DISTANCE = 1.496e11  # Normalizing distance in km (= 1 AU)
-NORM_FACTOR = 6e24  # Normalization factor for masses
+NORM_FACTOR = 6e24  # Normalization factor for masses ( so that Earth's mass = 1 compared to the other two bodies)
 N_TIME = 365 * 24 * 60 * 60.0  # Normalizing time (1 year)
 FORCE_UNIT = (BIG_G * NORM_FACTOR ** 2) / N_DISTANCE ** 2  # Unit force
 ENERGY_UNIT = FORCE_UNIT * N_DISTANCE  # Energy in Joules
 N_BIG_G = (NORM_FACTOR * BIG_G * N_TIME ** 2) / (N_DISTANCE ** 3)
 N_EARTH = EARTH / NORM_FACTOR  # Normalized mass of Earth
-N_SUN = SUN / NORM_FACTOR  # Normalized mass of Sun
+N_SUN = SUN / NORM_FACTOR  # Normalized mass of Sun, or the third body. If this is the case, change the mass
 N_THIRD_PLANET = 500 * THIRD_PLANET / NORM_FACTOR  # Normalized mass of third planet/Super size of the third planet
 t_i = 0  # initial time = 0
-t_f = 120  # final time = 120 years
-N = 1000 * t_f  # points per year
+t_f = 1000  # final time in years
+N = 100 * t_f  # points per year
 t = np.linspace(t_i, t_f, N)  # time array from ti to tf with N points
 h = t[2] - t[1]  # time step
 
@@ -37,9 +37,10 @@ def main():
     def init():
         line1.set_data([], [])
         line2.set_data([], [])
+        line3.set_data([], [])
         ttl.set_text('')
 
-        return line1, line2, ttl
+        return line1, line2, line3, ttl
 
     def F_Earth_on_Sun(r):
         """
@@ -178,40 +179,51 @@ def main():
     area_value = np.zeros(N)
 
     earth_position = np.zeros([N, 2])  # position vector of Earth
-    v = np.zeros([N, 2])  # velocity vector of Earth
+    earth_velocity = np.zeros([N, 2])  # velocity vector of Earth
     planet_position = np.zeros([N, 2])  # position vector of third planet
-    vj = np.zeros([N, 2])  # velocity vector of third planet
+    planet_velocity = np.zeros([N, 2])  # velocity vector of third planet
+    sun_position = np.zeros([N, 2])  # position vector of third planet
+    sun_velocity = np.zeros([N, 2])  # velocity vector of third planet
 
-    ri = [1496e8 / N_DISTANCE, 0]  # initial position of earth
-    rji = [5.2, 0]  # initial position of third planet
+    e_position_i = [1496e8 / N_DISTANCE, 0]  # initial position of earth
+    p_position_i = [5.2, 0]  # initial position of third planet
+    sun_position_i = [2, 2]  # initial position of sun
 
-    vv = np.sqrt(N_SUN * N_BIG_G / ri[0])  # Magnitude of Earth's initial velocity
+    e_vel_mag = np.sqrt(N_SUN * N_BIG_G / e_position_i[0])  # Magnitude of Earth's initial velocity
+    sun_vel_mag = np.sqrt(N_SUN * N_BIG_G / sun_position_i[0])
+    p_vel_j = 13.06e3 * N_TIME / N_DISTANCE  # Magnitude of third planet's initial velocity
 
-    vvj = 13.06e3 * N_TIME / N_DISTANCE  # Magnitude of third planet's initial velocity
-
-    vi = [0, vv * 1.0]  # Initial velocity vector for Earth.Taken to be along y direction as ri is on x axis.
-    vji = [0, vvj * 1.0]  # Initial velocity vector for third planet
+    e_vel_i = [0, e_vel_mag * 1.0]  # Initial velocity vector for Earth along y direction
+    p_vel_i = [0, p_vel_j * 1.0]  # Initial velocity vector for third planet
+    s_vel_i = [0, sun_vel_mag * 1.0]  # Initial velocity vector for third planet
 
     # Initializing the arrays with initial values.
     t[0] = t_i
-    earth_position[0, :] = ri
-    v[0, :] = vi
-    planet_position[0, :] = rji
-    vj[0, :] = vji
+    earth_position[0, :] = e_position_i
+    earth_velocity[0, :] = e_vel_i
+    planet_position[0, :] = p_position_i
+    planet_velocity[0, :] = p_vel_i
+    sun_position[0, :] = sun_position_i
+    sun_velocity[0, :] = s_vel_i
 
-    kinetic[0] = KineticEnergy(v[0, :])
+    kinetic[0] = KineticEnergy(earth_velocity[0, :])
     potential[0] = PotentialEnergy(earth_position[0, :])
-    angular[0] = AngMomentum(earth_position[0, :], v[0, :])
+    angular[0] = AngMomentum(earth_position[0, :], earth_velocity[0, :])
     area_value[0] = 0
 
     for i in range(0, N - 1):
-        [earth_position[i + 1, :], v[i + 1, :]] = Runge_Kutta(t[i], earth_position[i, :], v[i, :], h, 'earth',
-                                                              planet_position[i, :], vj[i, :])
-        [planet_position[i + 1, :], vj[i + 1, :]] = Runge_Kutta(t[i], planet_position[i, :], vj[i, :], h, 'Planet',
-                                                                earth_position[i, :], v[i, :])
-        kinetic[i + 1] = KineticEnergy(v[i + 1, :])
+        [earth_position[i + 1, :], earth_velocity[i + 1, :]] = Runge_Kutta(t[i], earth_position[i, :],
+                                                                           earth_velocity[i, :], h, 'earth',
+                                                                           planet_position[i, :], planet_velocity[i, :])
+        [planet_position[i + 1, :], planet_velocity[i + 1, :]] = Runge_Kutta(t[i], planet_position[i, :],
+                                                                             planet_velocity[i, :], h, 'Planet',
+                                                                             earth_position[i, :], earth_velocity[i, :])
+        [sun_position[i + 1, :], sun_velocity[i + 1, :]] = Runge_Kutta(t[i], sun_position[i, :],
+                                                                       sun_velocity[i, :], h, 'Planet',
+                                                                       earth_position[i, :], earth_velocity[i, :])
+        kinetic[i + 1] = KineticEnergy(earth_velocity[i + 1, :])
         potential[i + 1] = PotentialEnergy(earth_position[i + 1, :])
-        angular[i + 1] = AngMomentum(earth_position[i + 1, :], v[i + 1, :])
+        angular[i + 1] = AngMomentum(earth_position[i + 1, :], earth_velocity[i + 1, :])
         area_value[i + 1] = area_value[i] + AreaCalc(earth_position[i, :], earth_position[i + 1, :])
 
     # The mini plots below give out information such as angular momentum, kinetic and potential energy, area swept
@@ -250,17 +262,21 @@ def main():
 
     # Animation function
     def animate(i):
+        # Changing these orbits make the graph act in very particular ways 
         earth_orbit = 40
         planet_orbit = 200
+        sun_orbit = 100
         tm_yr = 'Elapsed time = ' + str(round(t[i], 1)) + ' years'
-        ttl.set_text(tm_yr)
-        line1.set_data(earth_position[i:max(1, i - earth_orbit):-1, 0], 
+        ttl.set_text('Elapsed time = ' + str(round(t[i], 1)) + ' years')
+        line1.set_data(earth_position[i:max(1, i - earth_orbit):-1, 0],
                        earth_position[i:max(1, i - earth_orbit):-1, 1])
-        line2.set_data(planet_position[i:max(1, i - planet_orbit):-1, 0], 
+        line2.set_data(planet_position[i:max(1, i - planet_orbit):-1, 0],
                        planet_position[i:max(1, i - planet_orbit):-1, 1])
-        return line1, line2
+        line3.set_data(sun_position[i:max(1, i - sun_orbit):-1, 0],
+                       sun_position[i:max(1, i - sun_orbit):-1, 1])
+        return line1, line2, line3, ttl
 
-    # Setting up the animation
+    # Animation
 
     fig, ax = py.subplots()
     ax.axis('square')
@@ -268,29 +284,34 @@ def main():
     ax.set_ylim((-7.2, 7.2))
     ax.get_xaxis().set_ticks([])
     ax.get_yaxis().set_ticks([])
+    ax.patch.set_facecolor('black')
+    fig.patch.set_alpha(0.)
+    fig.tight_layout()
 
-    ax.plot(0, 0, 'o', markersize=9, markerfacecolor="#FDB813", markeredgecolor="#FD7813")
+    # ax.plot(0, 0, 'o', markersize=9, markerfacecolor="#FDB813", markeredgecolor="#FD7813")
     line1, = ax.plot([], [], 'o-', color='#d2eeff', markevery=1000, markerfacecolor='#0077BE', lw=2)
     line2, = ax.plot([], [], 'o-', color='#e3dccb', markersize=8, markerfacecolor='#f66338', lw=2,
                      markevery=1000)
+    line3, = ax.plot([], [], 'o-', color="#FDB813", markevery=1000, markersize=8, markerfacecolor="#FDB813",
+                     markeredgecolor="#FD7813", lw=2)
 
     ax.plot([-6, -5], [6.5, 6.5], 'r-')
-    ax.text(-4.5, 6.3, r'1 AU = $1.496 \times 10^8$ km')
+    ax.text(-4.5, 6.3, r'1 AU = $1.496 \times 10^8$ km', color='white')
 
     ax.plot(-6, -6.2, 'o', color='#d2eeff', markerfacecolor='#0077BE')
-    ax.text(-5.5, -6.4, 'Earth')
+    ax.text(-5.5, -6.4, 'Earth', color='white')
 
     ax.plot(-3.3, -6.2, 'o', color='#e3dccb', markersize=8, markerfacecolor='#f66338')
-    ax.text(-2.9, -6.4, 'Planet')
+    ax.text(-2.9, -6.4, 'Second Planet', color='white')
 
     ax.plot(5, -6.2, 'o', markersize=9, markerfacecolor="#FDB813", markeredgecolor="#FD7813")
-    ax.text(5.5, -6.4, 'Sun')
-    ttl = ax.text(0.24, 1.05, '', transform=ax.transAxes, va='center')
+    ax.text(5.5, -6.4, 'Third Planet', color='white')
+    ttl = ax.text(1.5, 6.3, '', fontsize=9, color='white')
 
     anim = animation.FuncAnimation(fig, animate, init_func=init,
                                    frames=4000, interval=5, blit=True)
     plt.show()
-    # anim.save('orbit.mp4', fps=30, dpi=500)
+    # anim.save('animation.gif', writer="imagemagick", savefig_kwargs=dict(facecolor='#black'))
 
     pr.disable()
     # pr.print_stats(sort='time')
