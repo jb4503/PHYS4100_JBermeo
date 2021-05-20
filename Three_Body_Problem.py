@@ -11,17 +11,17 @@ EARTH = 6e24  # Mass of Earth in kg
 SUN = 2e30  # Mass of Sun in kg
 THIRD_PLANET = 1.9e27  # Mass of third planet
 BIG_G = 6.673e-11  # Gravitational Constant
-N_DISTANCE = 1.496e11  # Normalizing distance in km (= 1 AU)
-NORM_FACTOR = 6e24  # Normalization factor for masses ( so that Earth's mass = 1 compared to the other two bodies)
+N_DISTANCE = 1.496e11  # Normalizing distance in m (= 1 AU)
+NORM_FACTOR = 6e24  # Normalization factor for masses ( so that Earth's mass = 1)
 N_TIME = 365 * 24 * 60 * 60.0  # Normalizing time (1 year)
 FORCE_UNIT = (BIG_G * NORM_FACTOR ** 2) / N_DISTANCE ** 2  # Unit force
 ENERGY_UNIT = FORCE_UNIT * N_DISTANCE  # Energy in Joules
 N_BIG_G = (NORM_FACTOR * BIG_G * N_TIME ** 2) / (N_DISTANCE ** 3)
 N_EARTH = EARTH / NORM_FACTOR  # Normalized mass of Earth
-N_SUN = SUN / NORM_FACTOR  # Normalized mass of Sun, or the third body. If this is the case, change the mass
+N_SUN = SUN / NORM_FACTOR  # Normalized mass of Sun
 N_THIRD_PLANET = 500 * THIRD_PLANET / NORM_FACTOR  # Normalized mass of third planet/Super size of the third planet
 t_i = 0  # initial time = 0
-t_f = 1000  # final time in years
+t_f = 120  # final time in years
 N = 100 * t_f  # points per year
 t = np.linspace(t_i, t_f, N)  # time array from ti to tf with N points
 h = t[2] - t[1]  # time step
@@ -143,6 +143,11 @@ def main():
         return z
 
     def KineticEnergy(v):
+        """
+        Calculates the kinetic energy of Earth throughout the problem
+        :param v: Earth's velocity
+        :return: Kinetic enery over time
+        """
         vn = np.linalg.norm(v)
         return 0.5 * N_EARTH * vn ** 2
 
@@ -176,7 +181,9 @@ def main():
     kinetic = np.zeros(N)  # Kinetic energy
     potential = np.zeros(N)  # Potential energy
     angular = np.zeros(N)  # Angular momentum
-    area_value = np.zeros(N)
+    area_value = np.zeros(N) # Area swept
+
+    # Positional and velocity parameters for all three bodies
 
     earth_position = np.zeros([N, 2])  # position vector of Earth
     earth_velocity = np.zeros([N, 2])  # velocity vector of Earth
@@ -262,10 +269,10 @@ def main():
 
     # Animation function
     def animate(i):
-        # Changing these orbits make the graph act in very particular ways 
-        earth_orbit = 40
+        # Changing these orbits make the graph act in very particular ways
+        earth_orbit = 50
         planet_orbit = 200
-        sun_orbit = 100
+        sun_orbit = 600
         tm_yr = 'Elapsed time = ' + str(round(t[i], 1)) + ' years'
         ttl.set_text('Elapsed time = ' + str(round(t[i], 1)) + ' years')
         line1.set_data(earth_position[i:max(1, i - earth_orbit):-1, 0],
@@ -280,33 +287,33 @@ def main():
 
     fig, ax = py.subplots()
     ax.axis('square')
-    ax.set_xlim((-7.2, 7.2))
-    ax.set_ylim((-7.2, 7.2))
+    ax.set_xlim((-8.2, 8.2))
+    ax.set_ylim((-8.2, 8.2))
     ax.get_xaxis().set_ticks([])
     ax.get_yaxis().set_ticks([])
     ax.patch.set_facecolor('black')
     fig.patch.set_alpha(0.)
     fig.tight_layout()
 
-    # ax.plot(0, 0, 'o', markersize=9, markerfacecolor="#FDB813", markeredgecolor="#FD7813")
-    line1, = ax.plot([], [], 'o-', color='#d2eeff', markevery=1000, markerfacecolor='#0077BE', lw=2)
-    line2, = ax.plot([], [], 'o-', color='#e3dccb', markersize=8, markerfacecolor='#f66338', lw=2,
-                     markevery=1000)
-    line3, = ax.plot([], [], 'o-', color="#FDB813", markevery=1000, markersize=8, markerfacecolor="#FDB813",
-                     markeredgecolor="#FD7813", lw=2)
+    line1, = ax.plot([], [], 'o-', color='#d2eeff', markersize=8, markeredgecolor="#d2eeff", markerfacecolor='#0077BE',
+                     lw=2, markevery=100,)
+    line2, = ax.plot([], [], 'o-', color='#e3dccb', markersize=8, markerfacecolor='#f66338', markeredgecolor="#e3dccb",
+                     lw=2, markevery=1000)
+    line3, = ax.plot([], [], 'o-', color="#FDB813", markersize=8, markerfacecolor="#FDB813", markeredgecolor="#FD7813",
+                     lw=2, markevery=1000,)
 
-    ax.plot([-6, -5], [6.5, 6.5], 'r-')
-    ax.text(-4.5, 6.3, r'1 AU = $1.496 \times 10^8$ km', color='white')
+    ax.plot([1, 2], [-7.2, -7.2], 'r-')
+    ax.text(2.1, -7.4, r'1 AU = $1.496 \times 10^8$ km', color='white')
 
-    ax.plot(-6, -6.2, 'o', color='#d2eeff', markerfacecolor='#0077BE')
-    ax.text(-5.5, -6.4, 'Earth', color='white')
+    ax.plot(-6.2, -7.2, 'o', color='#d2eeff', markerfacecolor='#0077BE')
+    ax.text(-5.85, -7.4, 'First', color='white')
 
-    ax.plot(-3.3, -6.2, 'o', color='#e3dccb', markersize=8, markerfacecolor='#f66338')
-    ax.text(-2.9, -6.4, 'Second Planet', color='white')
+    ax.plot(-4.3, -7.2, 'o', color='#e3dccb', markersize=8, markerfacecolor='#f66338')
+    ax.text(-3.9, -7.4, 'Second', color='white')
 
-    ax.plot(5, -6.2, 'o', markersize=9, markerfacecolor="#FDB813", markeredgecolor="#FD7813")
-    ax.text(5.5, -6.4, 'Third Planet', color='white')
-    ttl = ax.text(1.5, 6.3, '', fontsize=9, color='white')
+    ax.plot(-1.6, -7.2, 'o', markersize=9, markerfacecolor="#FDB813", markeredgecolor="#FD7813")
+    ax.text(-1.1, -7.4, 'Third', color='white')
+    ttl = ax.text(1.5, 7.3, '', fontsize=9, color='white')
 
     anim = animation.FuncAnimation(fig, animate, init_func=init,
                                    frames=4000, interval=5, blit=True)
