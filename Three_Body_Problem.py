@@ -104,6 +104,8 @@ def main():
             return F_Earth_on_Sun(r) + Force_Earth_on_Planet(r, ro)
         if planet == 'Planet':
             return F_Planet_on_Sun(r) - Force_Earth_on_Planet(r, ro)
+        if planet == 'Sun':
+            return Force_Earth_on_Planet(r, ro) - F_Planet_on_Sun(r)
 
     def dr_dt(t, r, v, planet, ro, vo):
         return v
@@ -114,6 +116,8 @@ def main():
             y = F / N_EARTH
         if planet == 'Planet':
             y = F / N_THIRD_PLANET
+        if planet == 'Sun':
+            y = F / N_SUN
         return y
 
     def Runge_Kutta(t, r, v, h, planet, ro, vo):
@@ -302,6 +306,13 @@ def main():
     line3, = ax.plot([], [], 'o-', color="#FDB813", markersize=8, markerfacecolor="#FDB813", markeredgecolor="#FD7813",
                      lw=2, markevery=1000,)
 
+    # This is just for decoration purposes only. Starred space looks better than just an empty background
+
+    np.random.seed(1234)
+    x = np.random.uniform(-8, 8, (50, 1))
+    y = np.random.uniform(-8, 8, (50, 1))
+    ax.scatter(x, y, s=5, c='white', marker=(5, 2))
+
     ax.plot([1, 2], [-7.2, -7.2], 'r-')
     ax.text(2.1, -7.4, r'1 AU = $1.496 \times 10^8$ km', color='white')
 
@@ -318,7 +329,10 @@ def main():
     anim = animation.FuncAnimation(fig, animate, init_func=init,
                                    frames=4000, interval=5, blit=True)
     plt.show()
-    # anim.save('animation.gif', writer="imagemagick", savefig_kwargs=dict(facecolor='#black'))
+    # Finally figured out how to properly save a gif as a file
+    f = r"C:\Users\Steve\Desktop\Final Project files/orbits_2.gif"
+    writer_gif = animation.PillowWriter(fps=30)
+    anim.save(f, writer=writer_gif)
 
     pr.disable()
     # pr.print_stats(sort='time')
