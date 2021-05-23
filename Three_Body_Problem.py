@@ -2,9 +2,12 @@ import cProfile
 import math
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib import animation, rc
+from matplotlib import animation
 import pylab as py
 import time
+
+# Code Author: Jorge Bermeo - 5/24/21
+# This code is a representation of the Restricted Three Body Problem
 
 # Constants
 EARTH = 6e24  # Mass of Earth in kg
@@ -41,6 +44,12 @@ def main():
         ttl.set_text('')
 
         return line1, line2, line3, ttl
+
+    '''
+    ===========================
+            FUNCTIONS
+    ===========================
+    '''
 
     def F_Earth_on_Sun(r):
         """
@@ -81,7 +90,8 @@ def main():
     def Force_Earth_on_Planet(re, rj):
         """
         Calculates the force Earth exerts on a given planetary mass wih only a distance parameter
-        :param r: Distance between the earth and the planet
+        :param re: Distance between the earth and the planet
+        :param rj: Distance between the planet and the earth
         :return: The x and y components of the Gravitational force
         """
         r = np.zeros(2)
@@ -100,6 +110,14 @@ def main():
         return F
 
     def force(r, planet, ro, vo):
+        """
+        Calculates the force planet A exerts on planet B
+        :param r: position of planet A
+        :param planet: planet string
+        :param ro: position of planet B
+        :param vo: velocity of planet B
+        :return: Sum of the forces
+        """
         if planet == 'earth':
             return F_Earth_on_Sun(r) + Force_Earth_on_Planet(r, ro)
         if planet == 'Planet':
@@ -108,9 +126,29 @@ def main():
             return Force_Earth_on_Planet(r, ro) - F_Planet_on_Sun(r)
 
     def dr_dt(t, r, v, planet, ro, vo):
+        """
+        Time derivative function of the position
+        :param t: time
+        :param r: position of planet A
+        :param v: velocity of planet A
+        :param planet: string planet
+        :param ro: position of planet B
+        :param vo: velocity of planet B
+        :return: velocity
+        """
         return v
 
     def dv_dt(t, r, v, planet, ro, vo):
+        """
+        Time derivative function of the velocity
+        :param t: time
+        :param r: position of planet A
+        :param v: velocity of planet A
+        :param planet: string planet
+        :param ro: position of planet B
+        :param vo: velocity of planet B
+        :return: acceleration
+        """
         F = force(r, planet, ro, vo)
         if planet == 'earth':
             y = F / N_EARTH
@@ -124,13 +162,13 @@ def main():
         """
         Runge Kutta 4th order solver
         :param t: Time
-        :param r: Position
-        :param v: Velocity
+        :param r: position of planet A
+        :param v: velocity of planet A
         :param h: Time step
         :param planet: Desired planet for the calculation
-        :param ro:
-        :param vo:
-        :return:
+        :param ro: position of planet B
+        :param vo: velocity of planet B
+        :return: position and velocity ay each time step
         """
         k11 = dr_dt(t, r, v, planet, ro, vo)
         k21 = dv_dt(t, r, v, planet, ro, vo)
@@ -142,7 +180,7 @@ def main():
         k24 = dv_dt(t + h, r + h * k13, v + h * k23, planet, ro, vo)
         y0 = r + h * (k11 + 2. * k12 + 2. * k13 + k14) / 6.
         y1 = v + h * (k21 + 2. * k22 + 2. * k23 + k24) / 6.
-        z = np.zeros([2, 2])
+        # z = np.zeros([2, 2])
         z = [y0, y1]
         return z
 
@@ -150,17 +188,28 @@ def main():
         """
         Calculates the kinetic energy of Earth throughout the problem
         :param v: Earth's velocity
-        :return: Kinetic enery over time
+        :return: Kinetic energy over time
         """
         vn = np.linalg.norm(v)
         return 0.5 * N_EARTH * vn ** 2
 
     def PotentialEnergy(r):
+        """
+        Calculates the potential energy of Earth throughout the problem
+        :param r: Earth's location
+        :return: potential energy
+        """
         fmag = np.linalg.norm(F_Earth_on_Sun(r))
         rmag = np.linalg.norm(r)
         return -fmag * rmag
 
     def AngMomentum(r, v):
+        """
+        Calculates the angular momentum based on position and velocity
+        :param r: position
+        :param v: velocity
+        :return: angular momentum
+        """
         rn = np.linalg.norm(r)
         vn = np.linalg.norm(v)
         r = r / rn
@@ -170,6 +219,12 @@ def main():
         return N_EARTH * rn * vn * np.sin(theta)
 
     def AreaCalc(r1, r2):
+        """
+        Calculates the area swept
+        :param r1: position 1
+        :param r2: position 2
+        :return: Area swept over time
+        """
         r1n = np.linalg.norm(r1)
         r2n = np.linalg.norm(r2)
         r1 = r1 + 1e-20
@@ -180,7 +235,28 @@ def main():
         del_theta = np.abs(theta1 - theta2)
         return 0.5 * del_theta * rn ** 2
 
-    # Initialization
+    def mini_plot(fig_num, x, y, xl, yl, clr, lbl):
+        """
+        Performs a separate plot of any given data
+        :param fig_num: Figure number
+        :param x: X data
+        :param y: Y data
+        :param xl: X label
+        :param yl: Y label
+        :param clr: Color
+        :param lbl: Label
+        :return: Graph
+        """
+        py.figure(fig_num)
+        py.xlabel(xl)
+        py.ylabel(yl)
+        return py.plot(x, y, clr, linewidth=1.0, label=lbl)
+
+    '''
+    ===========================
+          INITIAL SETUP 
+    ===========================
+    '''
 
     kinetic = np.zeros(N)  # Kinetic energy
     potential = np.zeros(N)  # Potential energy
@@ -239,12 +315,6 @@ def main():
 
     # The mini plots below give out information such as angular momentum, kinetic and potential energy, area swept
 
-    def mini_plot(fig_num, x, y, xl, yl, clr, lbl):
-        py.figure(fig_num)
-        py.xlabel(xl)
-        py.ylabel(yl)
-        return py.plot(x, y, clr, linewidth=1.0, label=lbl)
-
     label_ = 'orbit'
     py.plot(0, 0, 'ro', linewidth=7)
     mini_plot(1, earth_position[:, 0], earth_position[:, 1], r'$x$ position (AU)', r'$y$ position (AU)', 'blue',
@@ -271,13 +341,16 @@ def main():
 
     mini_plot(4, t, area_value, r'Time, $t$ (years)', r'Swept Area ($AU^2$)', 'black', label_)
 
-    # Animation function
+    '''
+    ===========================
+           ANIMATION
+    ===========================
+    '''
     def animate(i):
         # Changing these orbits make the graph act in very particular ways
         earth_orbit = 50
         planet_orbit = 200
         sun_orbit = 600
-        tm_yr = 'Elapsed time = ' + str(round(t[i], 1)) + ' years'
         ttl.set_text('Elapsed time = ' + str(round(t[i], 1)) + ' years')
         line1.set_data(earth_position[i:max(1, i - earth_orbit):-1, 0],
                        earth_position[i:max(1, i - earth_orbit):-1, 1])
@@ -330,9 +403,10 @@ def main():
                                    frames=4000, interval=5, blit=True)
     plt.show()
     # Finally figured out how to properly save a gif as a file
-    f = r"C:\Users\Steve\Desktop\Final Project files/orbits_2.gif"
-    writer_gif = animation.PillowWriter(fps=30)
-    anim.save(f, writer=writer_gif)
+    # Change the path to the respective file destination 
+    # f = r"C:\Users\Steve\Desktop\Final Project files/orbits_2.gif"
+    # writer_gif = animation.PillowWriter(fps=30)
+    # anim.save(f, writer=writer_gif)
 
     pr.disable()
     # pr.print_stats(sort='time')
