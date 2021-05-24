@@ -48,7 +48,7 @@ def main():
 
     def animate(i):
         x = x_points
-        y = inv_discrete_sine(time[i])
+        y = inv_discrete_sine(start_time[i])
         line.set_data(x, y)
         return line,
 
